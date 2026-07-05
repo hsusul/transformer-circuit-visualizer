@@ -6,9 +6,7 @@ An interactive mechanistic interpretability workbench for inspecting transformer
 
 ## Screenshot
 
-![Screenshot placeholder for the Streamlit demo](docs/assets/screenshot-placeholder.svg)
-
-Replace this placeholder with a real screenshot of the Streamlit demo before publishing a tagged release.
+![Streamlit demo showing prompt analysis controls and TransformerLens outputs](docs/assets/streamlit-demo.png)
 
 ## Features
 

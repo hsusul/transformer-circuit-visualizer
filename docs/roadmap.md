@@ -4,7 +4,7 @@ This roadmap is intentionally scoped around making the project useful without hi
 
 ## Near Term
 
-- Replace the screenshot placeholder with a real demo screenshot.
+- Keep the demo screenshot current as the UI changes.
 - Add clearer progress indicators for model loading and analysis.
 - Improve model selection metadata: parameter count, architecture, and expected memory cost.
 - Add compact response modes for CLI and API debugging.

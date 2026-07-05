@@ -5,7 +5,7 @@ Use this checklist before publishing an initial GitHub release.
 ## Repository
 
 - [ ] Confirm `README.md` has an accurate pitch, screenshot, quickstart, API usage, limitations, and roadmap.
-- [ ] Replace the screenshot placeholder with a real demo screenshot.
+- [ ] Confirm the demo screenshot is current.
 - [ ] Confirm `LICENSE` is present and correct.
 - [ ] Confirm `CONTRIBUTING.md` is present and accurate.
 - [ ] Confirm docs are linked and current.
