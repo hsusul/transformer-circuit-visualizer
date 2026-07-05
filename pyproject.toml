@@ -11,22 +11,27 @@ requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [{ name = "Transformer Circuit Visualizer contributors" }]
 dependencies = [
+  "einops>=0.6.0",
   "fastapi>=0.115.0",
   "pydantic>=2.0.0",
+  "torch>=2.2.0",
+  "transformer-lens>=2.0.0",
   "uvicorn[standard]>=0.30.0",
 ]
 
 [project.optional-dependencies]
-analysis = [
-  "torch>=2.2.0",
-  "transformer-lens>=2.0.0",
+ui = [
+  "pandas>=2.0.0",
+  "streamlit>=1.36.0",
 ]
 test = [
   "httpx>=0.27.0",
+  "pandas>=2.0.0",
   "pytest>=8.0.0",
 ]
 dev = [
-  "transformer-circuit-visualizer[analysis,test]",
+  "ruff>=0.5.0",
+  "transformer-circuit-visualizer[test,ui]",
 ]
 
 [project.scripts]

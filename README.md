@@ -1,78 +1,87 @@
 # transformer-circuit-visualizer
 
-An open-source mechanistic interpretability workbench for transformer models.
+An interactive mechanistic interpretability workbench for inspecting transformer tokens, logits, attention heads, and single-head ablations from one prompt.
 
-The MVP is a Python/FastAPI backend. It accepts a prompt, runs a small
-TransformerLens-supported model, and returns tokenization, next-token
-predictions, layer-by-layer logit lens predictions, and attention heatmap data.
+> Status: initial backend/demo release. The project is useful for local exploration, but it is not yet a polished research platform.
 
-## Current MVP
+## Screenshot
 
-- FastAPI backend
-- Optional TransformerLens model service
-- Mock model service for local tests and lightweight smoke checks
-- Pydantic request/response schemas
-- pytest coverage for schemas, API health, analysis, and mock service behavior
-- Per-head attention summaries
-- Single-head ablation comparisons
+![Screenshot placeholder for the Streamlit demo](docs/assets/screenshot-placeholder.svg)
 
-No frontend, database, auth, background jobs, or Docker are included yet.
+Replace this placeholder with a real screenshot of the Streamlit demo before publishing a tagged release.
 
-## Setup
+## Features
 
-Create and activate a virtual environment:
+- Real TransformerLens model execution with PyTorch.
+- Prompt tokenization with token ids and decoded token strings.
+- Final-position next-token top-k predictions from raw model logits.
+- Layer-by-layer logit lens results at the final sequence position.
+- Attention heatmap data for selectable layer/head pairs.
+- Per-head summary statistics: entropy, max attention weight, previous-token attention, BOS attention, and output norm when available.
+- Single-head ablation comparison with before/after predictions and logit/probability deltas.
+- FastAPI backend with typed Pydantic schemas.
+- Lightweight Streamlit demo for local exploration.
+- Test-only fakes for fast unit tests without model downloads.
+
+## Quickstart
+
+Create a virtual environment:
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate
 ```
 
-Install the lightweight API/test dependencies:
+Install the project:
 
 ```bash
-python -m pip install -e ".[test]"
+python -m pip install -e ".[dev,ui,test]"
 ```
 
-Install real model-analysis dependencies when you are ready to use
-TransformerLens:
+Run a smoke analysis:
 
 ```bash
-python -m pip install -e ".[dev]"
+python scripts/smoke_analyze.py --prompt "The capital of France is"
 ```
 
-## Run Tests
+The default model is `gpt2-small`. The first run may download weights from Hugging Face. For a smaller local check, use:
 
 ```bash
-python -m pytest
+python scripts/smoke_analyze.py --model attn-only-1l --prompt "The capital of France is"
 ```
 
-## Smoke Check
-
-The default smoke script uses the mock model service, so it does not download
-model weights:
+If device selection causes problems, force CPU:
 
 ```bash
-python scripts/smoke_analyze.py
+TCV_DEVICE=cpu python scripts/smoke_analyze.py --prompt "The capital of France is"
 ```
 
-To use the real TransformerLens service after installing the `dev` extra:
+## Streamlit Demo
+
+Run the local UI:
 
 ```bash
-python scripts/smoke_analyze.py --real --prompt "The capital of France is"
+streamlit run apps/streamlit_app.py
 ```
 
-## Run API
+Open `http://localhost:8501`. The demo lets you choose a configured TransformerLens model, enter a prompt, set top-k, and inspect tokens, predictions, logit lens tables, attention heatmaps, head summaries, and ablation comparisons.
+
+## API Usage
+
+Start the FastAPI server:
 
 ```bash
 uvicorn transformer_circuit_visualizer.main:app --reload
 ```
 
-Then open:
+Health and model list:
 
-- `GET http://127.0.0.1:8000/health`
-- `GET http://127.0.0.1:8000/models`
+```bash
+curl http://127.0.0.1:8000/health
+curl http://127.0.0.1:8000/models
+```
 
-Example analysis request:
+Analyze a prompt:
 
 ```bash
 curl -X POST http://127.0.0.1:8000/analyze \
@@ -80,7 +89,15 @@ curl -X POST http://127.0.0.1:8000/analyze \
   -d '{"prompt":"The capital of France is","model_name":"gpt2-small","top_k":5}'
 ```
 
-Example head summary request:
+Fetch one attention pattern:
+
+```bash
+curl -X POST http://127.0.0.1:8000/attention \
+  -H "Content-Type: application/json" \
+  -d '{"prompt":"The capital of France is","model_name":"gpt2-small","layer":0,"head":0}'
+```
+
+Summarize heads:
 
 ```bash
 curl -X POST http://127.0.0.1:8000/heads/summary \
@@ -88,7 +105,7 @@ curl -X POST http://127.0.0.1:8000/heads/summary \
   -d '{"prompt":"The capital of France is","model_name":"gpt2-small"}'
 ```
 
-Example head ablation request:
+Ablate one head:
 
 ```bash
 curl -X POST http://127.0.0.1:8000/ablate/head \
@@ -96,28 +113,40 @@ curl -X POST http://127.0.0.1:8000/ablate/head \
   -d '{"prompt":"The capital of France is","model_name":"gpt2-small","layer":0,"head":0,"top_k":5}'
 ```
 
-## API Shape
+## Development
 
-- `GET /health`
-- `GET /models`
-- `POST /analyze`
-- `POST /attention`
-- `POST /heads/summary`
-- `POST /ablate/head`
+Run the standard checks:
 
-## Phase 2 Analysis
+```bash
+python -m pytest
+python -m ruff check .
+python scripts/smoke_analyze.py --prompt "The capital of France is"
+```
 
-Head summaries return one row per layer/head with:
+Use the raw prediction debugger when next-token output looks surprising:
 
-- average attention entropy
-- max attention weight
-- average attention paid to the previous token
-- average attention paid to the BOS/start token when present
-- output norm when available from the activation cache
+```bash
+python scripts/debug_prediction.py
+```
 
-Head ablation compares final-token predictions before and after zeroing one
-attention head's value stream. The response includes before/after top-k
-predictions plus logit and probability deltas for the reported tokens.
+The standard test suite uses deterministic test doubles for most coverage. Use `scripts/debug_prediction.py` when investigating raw model-output surprises.
 
-The default app uses the real TransformerLens service. Tests and the smoke
-script can inject `MockModelService` to avoid downloads.
+## Limitations
+
+- No database, auth, background jobs, deployment config, or hosted frontend yet.
+- Model loading is local and can be slow or memory-heavy, especially on CPU.
+- The Streamlit app is a demo UI, not the planned production frontend.
+- Next-token predictions are raw language-model continuations. They are not a factual QA layer.
+- Logit lens is implemented as a simple residual-stream unembedding view, not a full interpretability suite.
+- Only small TransformerLens-supported models are practical for the initial local workflow.
+
+## Roadmap
+
+- Add a richer frontend once the backend contracts settle.
+- Add better model selection, caching, and progress reporting.
+- Add circuit comparison views across prompts.
+- Add neuron/MLP and residual-stream views.
+- Improve ablation controls and diagnostics.
+- Add exportable analysis artifacts.
+
+See [docs/roadmap.md](docs/roadmap.md) for more detail.

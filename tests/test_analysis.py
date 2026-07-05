@@ -1,9 +1,9 @@
-"""Analysis workflow tests using the mock model service."""
+"""Analysis workflow tests using the test fake model service."""
 
 from __future__ import annotations
 
 from transformer_circuit_visualizer.analysis import CircuitAnalyzer
-from transformer_circuit_visualizer.model_service import MockModelService
+from tests.fakes import FakeModelServiceForTests
 from transformer_circuit_visualizer.schemas import (
     AblateHeadRequest,
     AnalyzeRequest,
@@ -13,13 +13,13 @@ from transformer_circuit_visualizer.schemas import (
 
 
 def test_analyzer_returns_tokenization_predictions_and_attention() -> None:
-    analyzer = CircuitAnalyzer(MockModelService())
+    analyzer = CircuitAnalyzer(FakeModelServiceForTests())
 
     result = analyzer.analyze(
-        AnalyzeRequest(prompt="Mechanistic interpretability", model_name="mock-gpt2-small", top_k=2)
+        AnalyzeRequest(prompt="Mechanistic interpretability", model_name="fake-gpt2-small", top_k=2)
     )
 
-    assert result.metadata.model_name == "mock-gpt2-small"
+    assert result.metadata.model_name == "fake-gpt2-small"
     assert result.metadata.n_layers == 3
     assert result.metadata.n_heads == 2
     assert result.tokens == ["<|bos|>", "Mechanistic", "interpretability"]
@@ -32,12 +32,12 @@ def test_analyzer_returns_tokenization_predictions_and_attention() -> None:
 
 
 def test_analyzer_returns_requested_attention_layer_and_head() -> None:
-    analyzer = CircuitAnalyzer(MockModelService())
+    analyzer = CircuitAnalyzer(FakeModelServiceForTests())
 
     result = analyzer.attention(
         AttentionRequest(
             prompt="Attention check",
-            model_name="mock-gpt2-small",
+            model_name="fake-gpt2-small",
             layer=2,
             head=1,
         )
@@ -49,10 +49,10 @@ def test_analyzer_returns_requested_attention_layer_and_head() -> None:
 
 
 def test_analyzer_returns_head_summary() -> None:
-    analyzer = CircuitAnalyzer(MockModelService())
+    analyzer = CircuitAnalyzer(FakeModelServiceForTests())
 
     result = analyzer.head_summary(
-        HeadSummaryRequest(prompt="Head summary", model_name="mock-gpt2-small")
+        HeadSummaryRequest(prompt="Head summary", model_name="fake-gpt2-small")
     )
 
     assert result.metadata.n_layers == 3
@@ -63,10 +63,10 @@ def test_analyzer_returns_head_summary() -> None:
 
 
 def test_analyzer_returns_head_ablation_comparison() -> None:
-    analyzer = CircuitAnalyzer(MockModelService())
+    analyzer = CircuitAnalyzer(FakeModelServiceForTests())
 
     result = analyzer.ablate_head(
-        AblateHeadRequest(prompt="Ablate this", model_name="mock-gpt2-small", layer=0, head=1, top_k=2)
+        AblateHeadRequest(prompt="Ablate this", model_name="fake-gpt2-small", layer=0, head=1, top_k=2)
     )
 
     assert result.layer == 0

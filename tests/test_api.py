@@ -5,11 +5,11 @@ from __future__ import annotations
 from fastapi.testclient import TestClient
 
 from transformer_circuit_visualizer.api import create_app
-from transformer_circuit_visualizer.model_service import MockModelService
+from tests.fakes import FakeModelServiceForTests
 
 
 def make_client() -> TestClient:
-    return TestClient(create_app(model_service=MockModelService()))
+    return TestClient(create_app(model_service=FakeModelServiceForTests()))
 
 
 def test_health_endpoint() -> None:
@@ -27,15 +27,15 @@ def test_models_endpoint() -> None:
     response = client.get("/models")
 
     assert response.status_code == 200
-    assert response.json()["models"] == ["mock-gpt2-small"]
+    assert response.json()["models"] == ["fake-gpt2-small"]
 
 
-def test_analyze_endpoint_with_mock_service() -> None:
+def test_analyze_endpoint_with_fake_service() -> None:
     client = make_client()
 
     response = client.post(
         "/analyze",
-        json={"prompt": "Hello circuits", "model_name": "mock-gpt2-small", "top_k": 3},
+        json={"prompt": "Hello circuits", "model_name": "fake-gpt2-small", "top_k": 3},
     )
 
     body = response.json()
@@ -48,12 +48,12 @@ def test_analyze_endpoint_with_mock_service() -> None:
     assert body["attention"]["head"] == 0
 
 
-def test_attention_endpoint_with_mock_service() -> None:
+def test_attention_endpoint_with_fake_service() -> None:
     client = make_client()
 
     response = client.post(
         "/attention",
-        json={"prompt": "Hello circuits", "model_name": "mock-gpt2-small", "layer": 1, "head": 1},
+        json={"prompt": "Hello circuits", "model_name": "fake-gpt2-small", "layer": 1, "head": 1},
     )
 
     body = response.json()
@@ -69,19 +69,19 @@ def test_attention_endpoint_rejects_out_of_range_layer() -> None:
 
     response = client.post(
         "/attention",
-        json={"prompt": "Hello", "model_name": "mock-gpt2-small", "layer": 99, "head": 0},
+        json={"prompt": "Hello", "model_name": "fake-gpt2-small", "layer": 99, "head": 0},
     )
 
     assert response.status_code == 400
     assert "out of range" in response.json()["detail"]
 
 
-def test_heads_summary_endpoint_with_mock_service() -> None:
+def test_heads_summary_endpoint_with_fake_service() -> None:
     client = make_client()
 
     response = client.post(
         "/heads/summary",
-        json={"prompt": "Hello circuits", "model_name": "mock-gpt2-small"},
+        json={"prompt": "Hello circuits", "model_name": "fake-gpt2-small"},
     )
 
     body = response.json()
@@ -94,14 +94,14 @@ def test_heads_summary_endpoint_with_mock_service() -> None:
     assert "output_norm" in body["head_summaries"][0]
 
 
-def test_ablate_head_endpoint_with_mock_service() -> None:
+def test_ablate_head_endpoint_with_fake_service() -> None:
     client = make_client()
 
     response = client.post(
         "/ablate/head",
         json={
             "prompt": "Hello circuits",
-            "model_name": "mock-gpt2-small",
+            "model_name": "fake-gpt2-small",
             "layer": 1,
             "head": 0,
             "top_k": 3,
@@ -125,7 +125,7 @@ def test_ablate_head_endpoint_rejects_out_of_range_head() -> None:
         "/ablate/head",
         json={
             "prompt": "Hello",
-            "model_name": "mock-gpt2-small",
+            "model_name": "fake-gpt2-small",
             "layer": 0,
             "head": 99,
             "top_k": 3,
