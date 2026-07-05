@@ -1,0 +1,40 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "transformer-circuit-visualizer"
+version = "0.1.0"
+description = "Interactive mechanistic interpretability workbench for transformer models."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Transformer Circuit Visualizer contributors" }]
+dependencies = [
+  "fastapi>=0.115.0",
+  "pydantic>=2.0.0",
+  "uvicorn[standard]>=0.30.0",
+]
+
+[project.optional-dependencies]
+analysis = [
+  "torch>=2.2.0",
+  "transformer-lens>=2.0.0",
+]
+test = [
+  "httpx>=0.27.0",
+  "pytest>=8.0.0",
+]
+dev = [
+  "transformer-circuit-visualizer[analysis,test]",
+]
+
+[project.scripts]
+tcv-api = "transformer_circuit_visualizer.main:run"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/transformer_circuit_visualizer"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
