@@ -74,3 +74,63 @@ def test_attention_endpoint_rejects_out_of_range_layer() -> None:
 
     assert response.status_code == 400
     assert "out of range" in response.json()["detail"]
+
+
+def test_heads_summary_endpoint_with_mock_service() -> None:
+    client = make_client()
+
+    response = client.post(
+        "/heads/summary",
+        json={"prompt": "Hello circuits", "model_name": "mock-gpt2-small"},
+    )
+
+    body = response.json()
+    assert response.status_code == 200
+    assert body["tokens"] == ["<|bos|>", "Hello", "circuits"]
+    assert len(body["head_summaries"]) == 6
+    assert body["head_summaries"][0]["layer"] == 0
+    assert body["head_summaries"][0]["head"] == 0
+    assert "average_attention_entropy" in body["head_summaries"][0]
+    assert "output_norm" in body["head_summaries"][0]
+
+
+def test_ablate_head_endpoint_with_mock_service() -> None:
+    client = make_client()
+
+    response = client.post(
+        "/ablate/head",
+        json={
+            "prompt": "Hello circuits",
+            "model_name": "mock-gpt2-small",
+            "layer": 1,
+            "head": 0,
+            "top_k": 3,
+        },
+    )
+
+    body = response.json()
+    assert response.status_code == 200
+    assert body["layer"] == 1
+    assert body["head"] == 0
+    assert len(body["before"]) == 3
+    assert len(body["after"]) == 3
+    assert len(body["deltas"]) == 3
+    assert body["deltas"][0]["logit_delta"] < 0
+
+
+def test_ablate_head_endpoint_rejects_out_of_range_head() -> None:
+    client = make_client()
+
+    response = client.post(
+        "/ablate/head",
+        json={
+            "prompt": "Hello",
+            "model_name": "mock-gpt2-small",
+            "layer": 0,
+            "head": 99,
+            "top_k": 3,
+        },
+    )
+
+    assert response.status_code == 400
+    assert "out of range" in response.json()["detail"]

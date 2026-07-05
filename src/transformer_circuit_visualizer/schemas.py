@@ -47,6 +47,23 @@ class AttentionRequest(BaseModel):
     head: int = Field(ge=0)
 
 
+class HeadSummaryRequest(BaseModel):
+    """Request to summarize every attention head for one prompt."""
+
+    prompt: str = Field(min_length=1)
+    model_name: str = settings.default_model
+
+
+class AblateHeadRequest(BaseModel):
+    """Request to compare normal predictions with one head ablated."""
+
+    prompt: str = Field(min_length=1)
+    model_name: str = settings.default_model
+    layer: int = Field(ge=0)
+    head: int = Field(ge=0)
+    top_k: int = Field(default=5, ge=1, le=50)
+
+
 class TokenPrediction(BaseModel):
     """One next-token prediction."""
 
@@ -72,6 +89,31 @@ class AttentionPattern(BaseModel):
     pattern: list[list[float]]
 
 
+class HeadSummary(BaseModel):
+    """Summary statistics for one attention head."""
+
+    layer: int = Field(ge=0)
+    head: int = Field(ge=0)
+    average_attention_entropy: float = Field(ge=0)
+    max_attention_weight: float = Field(ge=0, le=1)
+    previous_token_attention: float = Field(ge=0, le=1)
+    bos_attention: float | None = Field(default=None, ge=0, le=1)
+    output_norm: float | None = Field(default=None, ge=0)
+
+
+class PredictionDelta(BaseModel):
+    """How one token prediction changed after ablation."""
+
+    token: str
+    token_id: int
+    before_logit: float
+    after_logit: float
+    logit_delta: float
+    before_probability: float
+    after_probability: float
+    probability_delta: float
+
+
 class AnalyzeResponse(BaseModel):
     """Full MVP analysis response."""
 
@@ -81,6 +123,7 @@ class AnalyzeResponse(BaseModel):
     final_token_predictions: list[TokenPrediction]
     logit_lens: list[LayerLogitLensResult]
     attention: AttentionPattern
+    head_summaries: list[HeadSummary]
 
 
 class AttentionResponse(BaseModel):
@@ -88,3 +131,23 @@ class AttentionResponse(BaseModel):
 
     metadata: ModelMetadata
     attention: AttentionPattern
+
+
+class HeadSummaryResponse(BaseModel):
+    """Standalone head-summary endpoint response."""
+
+    metadata: ModelMetadata
+    tokens: list[str]
+    head_summaries: list[HeadSummary]
+
+
+class HeadAblationResponse(BaseModel):
+    """Head-ablation comparison response."""
+
+    metadata: ModelMetadata
+    layer: int
+    head: int
+    tokens: list[str]
+    before: list[TokenPrediction]
+    after: list[TokenPrediction]
+    deltas: list[PredictionDelta]

@@ -11,10 +11,14 @@ from transformer_circuit_visualizer.model_service import (
     TransformerLensModelService,
 )
 from transformer_circuit_visualizer.schemas import (
+    AblateHeadRequest,
     AnalyzeRequest,
     AnalyzeResponse,
     AttentionRequest,
     AttentionResponse,
+    HeadAblationResponse,
+    HeadSummaryRequest,
+    HeadSummaryResponse,
     HealthResponse,
     ModelListResponse,
 )
@@ -62,6 +66,30 @@ def create_app(model_service: ModelService | None = None) -> FastAPI:
         analyzer = CircuitAnalyzer(request.app.state.model_service)
         try:
             return analyzer.attention(payload)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        except RuntimeError as exc:
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+    @app.post("/heads/summary", response_model=HeadSummaryResponse)
+    def heads_summary(payload: HeadSummaryRequest, request: Request) -> HeadSummaryResponse:
+        """Return summary statistics for every attention head."""
+
+        analyzer = CircuitAnalyzer(request.app.state.model_service)
+        try:
+            return analyzer.head_summary(payload)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        except RuntimeError as exc:
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+    @app.post("/ablate/head", response_model=HeadAblationResponse)
+    def ablate_head(payload: AblateHeadRequest, request: Request) -> HeadAblationResponse:
+        """Compare final predictions before and after ablating one head."""
+
+        analyzer = CircuitAnalyzer(request.app.state.model_service)
+        try:
+            return analyzer.ablate_head(payload)
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         except RuntimeError as exc:

@@ -4,10 +4,14 @@ from __future__ import annotations
 
 from transformer_circuit_visualizer.model_service import ModelService
 from transformer_circuit_visualizer.schemas import (
+    AblateHeadRequest,
     AnalyzeRequest,
     AnalyzeResponse,
     AttentionRequest,
     AttentionResponse,
+    HeadAblationResponse,
+    HeadSummaryRequest,
+    HeadSummaryResponse,
     LayerLogitLensResult,
 )
 
@@ -42,6 +46,7 @@ class CircuitAnalyzer:
                 layer=request.attention_layer,
                 head=request.attention_head,
             ),
+            head_summaries=self._model_service.head_summary(run),
         )
 
     def attention(self, request: AttentionRequest) -> AttentionResponse:
@@ -55,4 +60,25 @@ class CircuitAnalyzer:
                 layer=request.layer,
                 head=request.head,
             ),
+        )
+
+    def head_summary(self, request: HeadSummaryRequest) -> HeadSummaryResponse:
+        """Return per-layer/per-head summary statistics."""
+
+        run = self._model_service.run_with_cache(request.model_name, request.prompt)
+        return HeadSummaryResponse(
+            metadata=run.metadata,
+            tokens=run.tokens,
+            head_summaries=self._model_service.head_summary(run),
+        )
+
+    def ablate_head(self, request: AblateHeadRequest) -> HeadAblationResponse:
+        """Compare normal predictions with one ablated attention head."""
+
+        run = self._model_service.run_with_cache(request.model_name, request.prompt)
+        return self._model_service.ablate_head(
+            run,
+            layer=request.layer,
+            head=request.head,
+            top_k=request.top_k,
         )
